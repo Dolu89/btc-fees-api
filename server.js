@@ -1,12 +1,12 @@
 
 import express from 'express'
 import WebSocket from 'ws'
-import { getFastetFees } from './src/fees.js'
+import { getData } from './src/fees.js'
 const app = express()
-const port = 3000
+const port = 3001
 
 app.get('/', async (req, res) => {
-  res.json({ fastestFee: await getFastetFees() })
+  res.json(await getData())
 })
 
 const server = app.listen(port, () => {
@@ -20,12 +20,12 @@ wss.on('connection', function connection (ws) {
 })
 
 async function loopFees () {
-  const fastestFees = await getFastetFees()
+  const data = await getData()
   wss.clients.forEach(async (client) => {
     if (client.readyState !== WebSocket.OPEN) {
       return
     }
-    client.send(JSON.stringify({ fastestFees }))
+    client.send(JSON.stringify(data))
   })
   setTimeout(loopFees, 3000)
 }

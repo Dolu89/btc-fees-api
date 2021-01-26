@@ -3,18 +3,20 @@ import axios from 'axios'
 // Block time confirmation in seconds
 const BLOCK_TIME_CONFIRMATION = 600
 
-export async function getFastetFees () {
+export async function getData () {
   const mempoolBlocksPromise = axios.get('https://mempool.space/api/v1/fees/mempool-blocks')
   const { data: lastBlockHash } = await axios.get('https://mempool.space/api/blocks/tip/hash')
   const { data: lastBlock } = await axios.get(`https://mempool.space/api/block/${lastBlockHash}`)
-  const percentSinceLastBlock = getPercentTimeSinceLastMinedBlock(lastBlock.timestamp)
+
+  const currentTimestamp = Math.round(new Date().getTime() / 1000)
+  const percentSinceLastBlock = getPercentTimeSinceLastMinedBlock(currentTimestamp, lastBlock.timestamp)
+
   const { data: memPoolBlocks } = await mempoolBlocksPromise
   const fastestFee = calculateFastestFee(memPoolBlocks, percentSinceLastBlock)
-  return fastestFee
+  return { fastestFee, nextBlock: memPoolBlocks[0], timeSinceLastBlock: currentTimestamp - lastBlock.timestamp }
 }
 
-function getPercentTimeSinceLastMinedBlock (blockMinedTime) {
-  const currentTimestamp = Math.round(new Date().getTime() / 1000)
+function getPercentTimeSinceLastMinedBlock (currentTimestamp, blockMinedTime) {
   const secondsSinceLastBlock = currentTimestamp - blockMinedTime
   return (secondsSinceLastBlock / BLOCK_TIME_CONFIRMATION) * 100
 }
